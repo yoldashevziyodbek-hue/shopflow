@@ -1,0 +1,65 @@
+# ShopFlow - local streaming stack (Kafka KRaft + Spark standalone cluster)
+# Airflow is added in stage 6, Snowflake/S3/dbt run outside Docker.
+#
+# NOTE: stop any older Kafka/Spark stacks first (ports 9092, 7077, 8080 must be free).
+
+name: shopflow
+
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: shopflow-kafka
+    ports:
+      - "9092:9092"   # host access (Python producer on Windows)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,INTERNAL://:29092,CONTROLLER://:9093
+      # localhost:9092 for the host, kafka:29092 for other containers (Spark, Airflow)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks: [shopflow-net]
+
+  spark-master:
+    image: apache/spark:3.5.9-python3
+    container_name: shopflow-spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "8090:8080"   # master UI
+      - "7077:7077"
+    volumes:
+      - ./data:/data
+      - ./spark_jobs:/opt/spark-jobs
+    networks: [shopflow-net]
+
+  spark-worker:
+    image: apache/spark:3.5.9-python3
+    container_name: shopflow-spark-worker
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on: [spark-master]
+    environment:
+      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES:-2}
+      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY:-2g}
+    ports:
+      - "8081:8081"   # worker UI
+    volumes:
+      - ./data:/data
+      - ./spark_jobs:/opt/spark-jobs
+    networks: [shopflow-net]
+
+volumes:
+  kafka-data:
+
+networks:
+  shopflow-net:
+    name: shopflow-net
