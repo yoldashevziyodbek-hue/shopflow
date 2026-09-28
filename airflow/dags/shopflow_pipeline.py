@@ -1,4 +1,4 @@
-"""ShopFlow daily pipeline: bronze (Kafka->Parquet) -> silver (clean) -> gold (aggregates)."""
+"""ShopFlow daily pipeline: bronze (Kafka->Parquet) -> silver (clean) -> gold (aggregates) -> quality checks."""
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -18,7 +18,7 @@ default_args = {
 
 with DAG(
     dag_id="shopflow_pipeline",
-    description="Bronze -> Silver -> Gold for shop.events",
+    description="Bronze -> Silver -> Gold -> Quality checks for shop.events",
     default_args=default_args,
     schedule="@daily",
     start_date=datetime(2026, 9, 26),
@@ -47,4 +47,9 @@ with DAG(
         bash_command=SPARK_SUBMIT + "/opt/spark-jobs/gold_metrics.py",
     )
 
-    bronze >> silver >> gold
+    quality = BashOperator(
+        task_id="data_quality_tests",
+        bash_command=SPARK_SUBMIT + "/opt/spark-jobs/data_quality_tests.py",
+    )
+
+    bronze >> silver >> gold >> quality
