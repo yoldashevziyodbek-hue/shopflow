@@ -1,8 +1,9 @@
 """ShopFlow daily pipeline: bronze (Kafka->Parquet) -> silver (clean) -> gold (aggregates) -> quality checks."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+from airflow.operators.bash import BashOperator
 
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 
 SPARK_SUBMIT = (
     "docker exec shopflow-spark-master /opt/spark/bin/spark-submit "
@@ -21,7 +22,7 @@ with DAG(
     description="Bronze -> Silver -> Gold -> Quality checks for shop.events",
     default_args=default_args,
     schedule="@daily",
-    start_date=datetime(2026, 9, 26),
+    start_date=datetime(2026, 9, 26, tzinfo=timezone.utc),
     catchup=False,
     max_active_runs=1,
     tags=["shopflow"],

@@ -1,8 +1,7 @@
 """Smoke test: read shop.events from Kafka, parse JSON, show what Spark sees."""
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import (StructType, StructField, StringType,
-                               LongType, DoubleType)
+from pyspark.sql.types import DoubleType, LongType, StringType, StructField, StructType
 
 KAFKA = "kafka:29092"
 TOPIC = "shop.events"

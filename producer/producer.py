@@ -28,7 +28,7 @@ PROGRESS_EVERY = 50_000
 
 def parse_event_time(value: str) -> datetime:
     """'2019-10-01 00:00:04 UTC' -> timezone-aware datetime."""
-    naive = datetime.strptime(value.replace(" UTC", ""), "%Y-%m-%d %H:%M:%S")
+    naive = datetime.strptime(value.replace(" UTC", ""), "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
     return naive.replace(tzinfo=timezone.utc)
 
 
