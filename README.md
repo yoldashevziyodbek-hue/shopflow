@@ -91,6 +91,6 @@ Dockerfile.airflow Airflow image with docker CLI (for spark-submit via docker ex
 - [x] Kafka ingestion + Spark Structured Streaming (bronze)
 - [x] Batch cleaning (silver) and business aggregates (gold)
 - [x] Airflow orchestration of the daily pipeline
+- [x] Automated data-quality checks (13 checks, run as the last DAG task)
+- [x] CI (GitHub Actions: ruff lint + syntax check)
 - [ ] dbt + Snowflake semantic layer
-- [ ] Automated data-quality tests
-- [ ] CI/CD (GitHub Actions)
